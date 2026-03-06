@@ -26,7 +26,7 @@ function App() {
     let wordCounter = -1;
 
     return (
-      <div className="text-3xl leading-[2.2] font-medium max-w-4xl font-sans tracking-wide flex flex-wrap relative">
+      <div className="text-3xl leading-[2.2] font-light max-w-4xl font-serif flex flex-wrap relative text-zinc-300">
         <AnimatePresence>
           {words.map((chunk, wIdx) => {
             const isSpace = chunk.trim() === '';
@@ -46,11 +46,11 @@ function App() {
               if (charIdx < cursorIndex) {
                 className += errors.includes(charIdx)
                   ? "text-red-500 border-b-2 border-red-500 bg-red-500/10 "
-                  : (isExplosive ? "text-indigo-400 font-bold " : "text-zinc-100 ");
+                  : (isExplosive ? "text-indigo-400 font-medium " : "text-zinc-100 font-medium");
               } else if (charIdx === cursorIndex) {
                 className += "text-zinc-500 bg-indigo-500/30 border-b-2 border-indigo-400 animate-pulse ";
               } else {
-                className += "text-zinc-600 ";
+                className += "text-zinc-600/60 ";
               }
 
               if (char === ' ') {
@@ -96,9 +96,20 @@ function App() {
     );
   };
 
+  // Calculate progress percent
+  const totalParagraphs = currentChapter ? currentChapter.paragraphs.length : 1;
+  const progressPercent = Math.round(((progress.paragraphIndex) / totalParagraphs) * 100);
+
   return (
     <Layout>
-      <div className="w-full text-left relative min-h-[50vh] flex flex-col justify-center">
+      <div className="absolute top-0 left-0 w-full h-1 bg-zinc-900 z-50">
+        <div
+          className="h-full bg-indigo-500/50 transition-all duration-500 ease-out"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+
+      <div className="w-full text-left relative min-h-[50vh] flex flex-col justify-center mt-12">
         {!currentBook ? (
           <div className="text-center text-zinc-500 text-xl font-light">
             Select a book from the <span className="text-indigo-400">Library</span> to start reading.

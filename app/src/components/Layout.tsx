@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { BookOpen, Settings, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { loadPreloadedBook, parseTxt } from '../lib/bookParser';
+import { loadPreloadedBook, parseTxt, parseEpub } from '../lib/bookParser';
+import { Volume2, VolumeX } from 'lucide-react';
+import { soundManager } from '../lib/sounds';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [leftOpen, setLeftOpen] = React.useState(false);
@@ -10,6 +12,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { books, progress, settings, wpm, accuracy, updateSettings, addBook, setCurrentBook, setChapterIndex } = useStore();
 
   const currentBook = progress.bookId ? books[progress.bookId] : null;
+
+  // Sync sound manager with initial settings
+  useEffect(() => {
+    if (!settings.soundEnabled) soundManager.toggleMute();
+  }, []);
 
   // Load preloaded books on mount
   useEffect(() => {
@@ -30,13 +37,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.name.endsWith('.txt')) {
-      const txt = await file.text();
-      const book = await parseTxt(txt, file.name);
-      addBook(book);
-      setCurrentBook(book.id);
-    } else {
-      alert('Only .txt is supported currently. .epub support coming soon!');
+    try {
+      if (file.name.endsWith('.txt')) {
+        const txt = await file.text();
+        const book = await parseTxt(txt, file.name);
+        addBook(book);
+        setCurrentBook(book.id);
+      } else if (file.name.endsWith('.epub')) {
+        const book = await parseEpub(file);
+        addBook(book);
+        setCurrentBook(book.id);
+      } else {
+        alert('Please upload a .txt or .epub file.');
+      }
+    } catch (err: any) {
+      alert(`Error parsing file: ${err.message}`);
     }
   };
 
@@ -60,8 +75,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
           <label className="w-full flex items-center gap-3 p-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors text-left border border-zinc-700 cursor-pointer">
             <Upload className="w-4 h-4 text-zinc-400" />
-            <span className="text-sm font-medium">Upload Book (.txt)</span>
-            <input type="file" accept=".txt" className="hidden" onChange={handleFileUpload} />
+            <span className="text-sm font-medium">Upload Book (.txt, .epub)</span>
+            <input type="file" accept=".txt,.epub" className="hidden" onChange={handleFileUpload} />
           </label>
 
           <div className="mt-4">
@@ -205,6 +220,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 Explosive
               </button>
             </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-400 mb-3">Audio</h3>
+            <button
+              onClick={() => {
+                const newMuteState = soundManager.toggleMute();
+                updateSettings({ soundEnabled: !newMuteState });
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-zinc-800 border border-zinc-700 text-sm font-medium hover:bg-zinc-700 transition-colors"
+            >
+              {settings.soundEnabled ? <><Volume2 className="w-4 h-4" /> Sounds Enabled</> : <><VolumeX className="w-4 h-4 text-zinc-500" /> Sounds Muted</>}
+            </button>
           </div>
         </div>
       </aside>

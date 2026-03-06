@@ -38,6 +38,7 @@ export const useStore = create<StoreState>()(
       settings: {
         difficulty: 'normal',
         theme: 'explosive',
+        soundEnabled: true,
       },
       wpm: 0,
       accuracy: 100,

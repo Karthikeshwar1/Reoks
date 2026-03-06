@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../store/useStore';
+import { soundManager } from '../lib/sounds';
 
 export const useTypingEngine = (paragraph: string) => {
   const { settings, updateStats, nextParagraph } = useStore();
@@ -40,7 +41,16 @@ export const useTypingEngine = (paragraph: string) => {
 
     setCompletedWordIndices(prev => {
       const updated = new Set(prev);
-      for (let i = 0; i < finalCount; i++) updated.add(i);
+      let newlyCompleted = false;
+      for (let i = 0; i < finalCount; i++) {
+        if (!updated.has(i)) newlyCompleted = true;
+        updated.add(i);
+      }
+
+      if (newlyCompleted && settings.theme === 'explosive') {
+        soundManager.playShatter();
+      }
+
       return Array.from(updated);
     });
   };
@@ -86,6 +96,11 @@ export const useTypingEngine = (paragraph: string) => {
         return next;
       });
     };
+
+    // Sound on every key except backspace (handled later)
+    if (e.key !== 'Backspace') {
+      soundManager.playKeystroke();
+    }
 
     // Backspace handling
     if (e.key === 'Backspace') {
@@ -134,6 +149,7 @@ export const useTypingEngine = (paragraph: string) => {
           setCorrectKeystrokes(prev => prev + 1);
           advanceCursor(nextIndex - cursorIndex);
         } else {
+          soundManager.playError();
           setTotalKeystrokes(prev => prev + 1);
           setErrors(prev => [...prev, cursorIndex]);
         }
@@ -158,6 +174,7 @@ export const useTypingEngine = (paragraph: string) => {
       if (e.key === expectedChar) {
         setCorrectKeystrokes(prev => prev + 1);
       } else {
+        soundManager.playError();
         setErrors(prev => [...prev, cursorIndex]);
       }
 
@@ -175,6 +192,7 @@ export const useTypingEngine = (paragraph: string) => {
         setTyped(prev => prev + e.key);
         advanceCursor(1);
       } else {
+        soundManager.playError();
         if (!errors.includes(cursorIndex)) {
           setErrors(prev => [...prev, cursorIndex]);
         }

@@ -25,4 +25,5 @@ export interface Progress {
 export interface Settings {
   difficulty: Difficulty;
   theme: Theme;
+  soundEnabled: boolean;
 }
